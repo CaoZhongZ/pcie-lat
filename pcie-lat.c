@@ -38,6 +38,7 @@
 #include <linux/uaccess.h>
 #include <linux/delay.h>
 #include <linux/vmalloc.h>
+#include <linux/version.h>
 
 #define DRIVER_NAME "pcie-lat"
 #define LOOPS_UPPER_LIMIT	10000000
@@ -531,7 +532,7 @@ ATTRIBUTE_GROUPS(pcielat);
 /*
  * Module init functions
  */
-static char *pci_char_devnode(struct device *dev, umode_t *mode)
+static char *pci_char_devnode(const struct device *dev, umode_t *mode)
 {
 	struct pci_dev *pdev = to_pci_dev(dev->parent);
 	return kasprintf(GFP_KERNEL, DRIVER_NAME "/%02x:%02x.%x",
@@ -598,7 +599,11 @@ static int __init pci_init(void)
 	tsc_overhead = get_tsc_overhead();
 	pr_info(DRIVER_NAME ": Overhead of TSC measurement: %d cycles\n", tsc_overhead);
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,14,0)
+  pcielat_class = class_create(DRIVER_NAME);
+#else
 	pcielat_class = class_create(THIS_MODULE, DRIVER_NAME);
+#endif
 	if (IS_ERR(pcielat_class)) {
 		err = PTR_ERR(pcielat_class);
 		return err;
